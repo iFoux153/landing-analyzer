@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Landing Analyzer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #f0f0f0;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    .container { max-width: 680px; margin: 0 auto; }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 32px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    input[type="url"] {
+      flex: 1;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid #333;
+      background: #1a1a1a;
+      color: #f0f0f0;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="url"]:focus { border-color: #6c63ff; }
+    input[type="url"]::placeholder { color: #555; }
+
+    button {
+      padding: 14px 22px;
+      border-radius: 10px;
+      border: none;
+      background: #6c63ff;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+    button:hover { background: #5a52e0; }
+    button:active { transform: scale(0.97); }
+    button:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 40px 0;
+    }
+    .loader.active { display: block; }
+    .loader-spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #333;
+      border-top-color: #6c63ff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader p { color: #888; font-size: 0.9rem; }
+
+    .result { display: none; }
+    .result.active { display: block; }
+
+    /* Score global */
+    .score-global {
+      background: #1a1a1a;
+      border-radius: 16px;
+      padding: 28px;
+      text-align: center;
+      margin-bottom: 16px;
+      border: 1px solid #2a2a2a;
+    }
+    .score-number {
+      font-size: 4rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .score-label { color: #888; font-size: 0.85rem; margin-top: 6px; }
+    .verdict { margin-top: 14px; font-size: 0.9rem; color: #ccc; line-height: 1.5; }
+
+    /* Score bar */
+    .scores-grid {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .score-item {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 14px 16px;
+      border: 1px solid #2a2a2a;
+    }
+    .score-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .score-item-name { font-size: 0.85rem; color: #ccc; }
+    .score-item-val { font-size: 0.85rem; font-weight: 700; }
+    .bar-bg { height: 5px; background: #2a2a2a; border-radius: 3px; }
+    .bar-fill { height: 5px; border-radius: 3px; transition: width 0.8s ease; }
+
+    /* Problèmes */
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #888;
+      margin: 24px 0 10px;
+    }
+    .problem-card {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 10px;
+      border: 1px solid #2a2a2a;
+      border-left: 3px solid #ff6b6b;
+    }
+    .problem-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 8px; }
+    .problem-constat { font-size: 0.85rem; color: #aaa; margin-bottom: 8px; line-height: 1.5; }
+    .problem-action {
+      font-size: 0.85rem;
+      color: #6c63ff;
+      line-height: 1.5;
+    }
+    .problem-action::before { content: "→ "; }
+
+    /* Reformulation */
+    .reform-card {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid #2a2a2a;
+      border-left: 3px solid #63ff8f;
+    }
+    .reform-label { font-size: 0.75rem; color: #888; margin-bottom: 4px; }
+    .reform-before { font-size: 0.9rem; color: #888; text-decoration: line-through; margin-bottom: 12px; }
+    .reform-after { font-size: 0.95rem; font-weight: 700; color: #63ff8f; margin-bottom: 12px; }
+    .reform-why { font-size: 0.85rem; color: #aaa; line-height: 1.5; }
+
+    .error-box {
+      background: #2a1010;
+      border: 1px solid #ff4444;
+      border-radius: 10px;
+      padding: 16px;
+      color: #ff8888;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .error-box.active { display: block; }
+
+    @media (max-width: 480px) {
+      .input-row { flex-direction: column; }
+      button { width: 100%; }
+      .score-number { font-size: 3rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>🔍 Landing Analyzer</h1>
+  <p class="subtitle">Analyse ta landing page et reçois un audit CRO actionnable</p>
+
+  <div class="input-row">
+    <input type="url" id="urlInput" placeholder="https://exemple.com" autocomplete="off"/>
+    <button id="analyzeBtn" onclick="analyze()">Analyser</button>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="loader" id="loader">
+    <div class="loader-spinner"></div>
+    <p id="loaderText">Chargement de la page...</p>
+  </div>
+
+  <div class="result" id="result">
+    <!-- Score global -->
+    <div class="score-global">
+      <div class="score-number" id="scoreGlobal">—</div>
+      <div class="score-label">Score global / 100</div>
+      <div class="verdict" id="verdict"></div>
+    </div>
+
+    <!-- Scores par pilier -->
+    <div class="section-title">Scores par pilier</div>
+    <div class="scores-grid" id="scoresGrid"></div>
+
+    <!-- Problèmes -->
+    <div class="section-title">🚨 Top 3 problèmes critiques</div>
+    <div id="problemsList"></div>
+
+    <!-- Reformulation -->
+    <div class="section-title">✍️ Reformulation suggérée</div>
+    <div class="reform-card" id="reformCard"></div>
+  </div>
+</div>
+
+<script>
+const PILIERS = [
+  { key: 'clarte_message',    label: 'Clarté du message',       max: 20 },
+  { key: 'proposition_valeur',label: 'Proposition de valeur',   max: 20 },
+  { key: 'copywriting',       label: 'Copywriting',             max: 15 },
+  { key: 'structure_flow',    label: 'Structure & flow',        max: 15 },
+  { key: 'call_to_action',    label: 'Call to Action',          max: 15 },
+  { key: 'confiance_preuve',  label: 'Confiance & preuve',      max: 10 },
+  { key: 'mobile_performance',label: 'Mobile & performance',    max: 5  },
+];
+
+function scoreColor(pct) {
+  if (pct >= 75) return '#63ff8f';
+  if (pct >= 50) return '#ffd663';
+  return '#ff6b6b';
+}
+
+async function analyze() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) return;
+
+  const btn = document.getElementById('analyzeBtn');
+  const loader = document.getElementById('loader');
+  const result = document.getElementById('result');
+  const errorBox = document.getElementById('errorBox');
+
+  btn.disabled = true;
+  loader.classList.add('active');
+  result.classList.remove('active');
+  errorBox.classList.remove('active');
+
+  const steps = ['Chargement de la page...', 'Analyse du contenu...', 'Claude rédige les recommandations...'];
+  let step = 0;
+  const loaderText = document.getElementById('loaderText');
+  const interval = setInterval(() => {
+    step = (step + 1) % steps.length;
+    loaderText.textContent = steps[step];
+  }, 3000);
+
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    clearInterval(interval);
+
+    if (!data.success) throw new Error(data.error);
+    renderResult(data.analysis);
+
+  } catch (err) {
+    clearInterval(interval);
+    errorBox.textContent = '❌ ' + (err.message || 'Une erreur est survenue');
+    errorBox.classList.add('active');
+  } finally {
+    btn.disabled = false;
+    loader.classList.remove('active');
+  }
+}
+
+function renderResult(a) {
+  const pct = a.score_global;
+  const color = scoreColor(pct);
+
+  // Score global
+  const scoreEl = document.getElementById('scoreGlobal');
+  scoreEl.textContent = a.score_global;
+  scoreEl.style.color = color;
+  document.getElementById('verdict').textContent = a.verdict_global;
+
+  // Scores piliers
+  const grid = document.getElementById('scoresGrid');
+  grid.innerHTML = PILIERS.map(p => {
+    const val = a.scores[p.key] || 0;
+    const pct = Math.round((val / p.max) * 100);
+    const c = scoreColor(pct);
+    return `
+      <div class="score-item">
+        <div class="score-item-header">
+          <span class="score-item-name">${p.label}</span>
+          <span class="score-item-val" style="color:${c}">${val}/${p.max}</span>
+        </div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${c}"></div></div>
+      </div>`;
+  }).join('');
+
+  // Problèmes
+  const problems = document.getElementById('problemsList');
+  problems.innerHTML = a.top3_problemes.map((p, i) => `
+    <div class="problem-card">
+      <div class="problem-title">${i+1}. ${p.titre}</div>
+      <div class="problem-constat">${p.constat}</div>
+      <div class="problem-action">${p.action}</div>
+    </div>`).join('');
+
+  // Reformulation
+  const r = a.reformulation;
+  document.getElementById('reformCard').innerHTML = `
+    <div class="reform-label">Titre actuel</div>
+    <div class="reform-before">${r.titre_actuel}</div>
+    <div class="reform-label">Titre suggéré</div>
+    <div class="reform-after">${r.titre_suggere}</div>
+    <div class="reform-why">${r.pourquoi}</div>`;
+
+  document.getElementById('result').classList.add('active');
+}
+
+// Enter key
+document.getElementById('urlInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') analyze();
+});
+</script>
+</body>
+</html>
