@@ -121,6 +121,7 @@ ${pageContent}`;
     body: JSON.stringify({
       model: GATEWAY_MODEL,
       max_tokens: 2000,
+      temperature: 0,
       messages: [{ role: 'user', content: prompt }]
     })
   });
@@ -134,7 +135,78 @@ ${pageContent}`;
   return JSON.parse(jsonMatch[0]);
 }
 
-// --- API route ---
+// --- Générer version améliorée ---
+async function generateImproved(content, analysis) {
+  const problems = analysis.top3_problemes.map((p, i) => `${i+1}. ${p.titre} → ${p.action}`).join('\n');
+
+  const prompt = `Tu es un expert copywriter CRO. Voici une landing page et son analyse.
+
+PROBLÈMES IDENTIFIÉS :
+${problems}
+
+CONTENU ACTUEL DE LA PAGE :
+Titre : ${content.title}
+Meta description : ${content.metaDesc}
+H1 : ${content.h1.join(' | ') || 'ABSENT'}
+Paragraphes principaux : ${content.paragraphs.slice(0, 5).join(' | ')}
+CTAs : ${[...new Set(content.buttons)].slice(0, 8).join(' | ')}
+
+Génère des versions améliorées pour les sections clés. Retourne UNIQUEMENT ce JSON :
+
+{
+  "sections": [
+    {
+      "section": "Titre principal (H1)",
+      "original": "<titre actuel>",
+      "improved": "<nouvelle version orientée bénéfice + cible>",
+      "note": "<explication courte>"
+    },
+    {
+      "section": "Meta description",
+      "original": "<meta actuelle>",
+      "improved": "<nouvelle meta : accroche + bénéfice + CTA implicite, max 155 caractères>",
+      "note": null
+    },
+    {
+      "section": "Hero paragraph",
+      "original": "<paragraphe hero actuel>",
+      "improved": "<version réécrite orientée douleur → solution>",
+      "note": "<explication>"
+    },
+    {
+      "section": "Call to Action principal",
+      "original": "<CTA actuel>",
+      "improved": "<CTA réécrit orienté valeur>",
+      "note": "<pourquoi ce wording>"
+    }
+  ]
+}`;
+
+  const res = await fetch(GATEWAY_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${GATEWAY_TOKEN}`
+    },
+    body: JSON.stringify({
+      model: GATEWAY_MODEL,
+      max_tokens: 2000,
+      temperature: 0,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  const data = await res.json();
+  const text = data.choices[0].message.content;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('Réponse JSON invalide');
+  return JSON.parse(jsonMatch[0]);
+}
+
+// Cache temporaire du contenu scrapé (clé = url)
+const pageCache = new Map();
+
+// --- API route : analyze ---
 app.post('/api/analyze', async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: 'URL manquante' });
@@ -142,9 +214,30 @@ app.post('/api/analyze', async (req, res) => {
   try {
     console.log(`🔍 Scraping: ${url}`);
     const content = await scrapePage(url);
+    pageCache.set(url, content); // on garde pour /api/improve
     console.log(`🤖 Analysing with Claude...`);
     const analysis = await analyzePage(content);
     res.json({ success: true, url, analysis });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- API route : improve ---
+app.post('/api/improve', async (req, res) => {
+  const { url, analysis } = req.body;
+  if (!url || !analysis) return res.status(400).json({ error: 'URL et analyse requises' });
+
+  try {
+    let content = pageCache.get(url);
+    if (!content) {
+      console.log(`🔍 Re-scraping for improve: ${url}`);
+      content = await scrapePage(url);
+    }
+    console.log(`✨ Generating improved version...`);
+    const improved = await generateImproved(content, analysis);
+    res.json({ success: true, improved });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
