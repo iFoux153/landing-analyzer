@@ -4,163 +4,249 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Landing Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0c0c0e;
-      --surface: #141416;
-      --border: #222226;
-      --text: #f0f0f2;
-      --muted: #888890;
-      --accent: #7c6cfc;
-      --green: #4ade80;
-      --yellow: #fbbf24;
-      --red: #f87171;
+      --bg:       #08080a;
+      --surface:  #111113;
+      --surface2: #18181b;
+      --border:   #27272a;
+      --border2:  #3f3f46;
+      --text:     #fafafa;
+      --text2:    #a1a1aa;
+      --text3:    #52525b;
+      --accent:   #818cf8;
+      --green:    #34d399;
+      --yellow:   #fbbf24;
+      --red:      #f87171;
+      --radius:   14px;
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      font-family: 'Inter', -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      padding: 32px 16px 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 64px 24px 48px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text2);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+    .logo-dot {
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .hero p {
+      font-size: 1rem;
+      color: var(--text2);
       line-height: 1.6;
+      margin-bottom: 36px;
     }
 
-    .container { max-width: 720px; margin: 0 auto; }
-
-    /* Header */
-    .header { margin-bottom: 40px; }
-    .header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
-    .header p { color: var(--muted); font-size: 0.9rem; }
-
-    /* Input */
-    .search-box {
+    /* ── SEARCH ── */
+    .search {
       display: flex;
-      gap: 10px;
-      margin-bottom: 40px;
-    }
-    input[type="url"] {
-      flex: 1;
-      padding: 13px 16px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
+      gap: 8px;
       background: var(--surface);
-      color: var(--text);
-      font-size: 0.95rem;
-      outline: none;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 6px 6px 6px 16px;
       transition: border-color 0.2s;
     }
-    input[type="url"]:focus { border-color: var(--accent); }
-    input[type="url"]::placeholder { color: #444; }
-
-    .btn {
-      padding: 13px 22px;
-      border-radius: 10px;
+    .search:focus-within { border-color: var(--accent); }
+    .search input {
+      flex: 1;
+      background: none;
       border: none;
+      outline: none;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text);
+      min-width: 0;
+    }
+    .search input::placeholder { color: var(--text3); }
+    .search button {
       background: var(--accent);
       color: #fff;
-      font-size: 0.95rem;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-family: inherit;
+      font-size: 0.875rem;
       font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
-      transition: opacity 0.2s;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
     }
-    .btn:hover { opacity: 0.85; }
-    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .search button:hover { opacity: 0.85; }
+    .search button:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* Loader */
-    .loader { display: none; padding: 60px 0; text-align: center; }
-    .loader.active { display: block; }
-    .spinner {
-      width: 36px; height: 36px;
-      border: 2.5px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      margin: 0 auto 16px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loader-step { color: var(--muted); font-size: 0.875rem; }
-
-    /* Error */
-    .error {
+    /* ── ERROR ── */
+    .error-box {
       display: none;
-      background: #1c0a0a;
-      border: 1px solid #5c1a1a;
+      margin: 16px 0;
+      padding: 12px 16px;
+      background: rgba(248,113,113,.08);
+      border: 1px solid rgba(248,113,113,.25);
       border-radius: 10px;
-      padding: 14px 16px;
-      color: #f87171;
+      color: var(--red);
       font-size: 0.875rem;
-      margin-bottom: 24px;
     }
-    .error.active { display: block; }
+    .error-box.show { display: block; }
 
-    /* Report */
-    .report { display: none; }
-    .report.active { display: block; }
-
-    /* URL badge */
-    .url-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.8rem;
-      color: var(--muted);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 4px 12px;
-      margin-bottom: 24px;
-      word-break: break-all;
-    }
-
-    /* Score hero */
-    .score-hero {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 28px 24px;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: flex-start;
-      gap: 24px;
-    }
-    .score-big {
-      font-size: 3.5rem;
-      font-weight: 800;
-      line-height: 1;
-      min-width: 90px;
+    /* ── LOADER ── */
+    .loader {
+      display: none;
+      padding: 80px 0;
       text-align: center;
     }
-    .score-big span { font-size: 1.2rem; font-weight: 400; color: var(--muted); }
-    .score-hero-right { flex: 1; }
-    .score-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
-    .verdict-text { font-size: 0.925rem; color: #ccc; line-height: 1.65; }
+    .loader.show { display: block; }
+    .loader-ring {
+      width: 44px; height: 44px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-text { font-size: 0.875rem; color: var(--text2); }
 
-    /* Section */
-    .section { margin-top: 32px; }
-    .section-title {
+    /* ── REPORT ── */
+    .report { display: none; padding-bottom: 80px; }
+    .report.show { display: block; }
+
+    .report-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Source bar */
+    .source-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0 28px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+    .source-url {
+      font-size: 0.8rem;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .source-url a {
+      color: var(--text2);
+      text-decoration: none;
+    }
+    .source-url a:hover { color: var(--text); }
+    .btn-reanalyze {
+      font-size: 0.775rem;
+      color: var(--text3);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-reanalyze:hover { border-color: var(--border2); color: var(--text2); }
+
+    /* Score card */
+    .score-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .score-gauge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .score-num {
+      font-size: 4rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+    .score-denom {
+      font-size: 0.75rem;
+      color: var(--text3);
+      font-weight: 500;
+    }
+
+    .score-meta { }
+    .score-grade {
+      display: inline-block;
       font-size: 0.7rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.1em;
-      color: var(--muted);
+      padding: 3px 8px;
+      border-radius: 4px;
       margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--border);
+    }
+    .grade-bad   { background: rgba(248,113,113,.15); color: var(--red); }
+    .grade-ok    { background: rgba(251,191,36,.12);  color: var(--yellow); }
+    .grade-good  { background: rgba(52,211,153,.12);  color: var(--green); }
+
+    .verdict {
+      font-size: 0.9rem;
+      color: var(--text2);
+      line-height: 1.7;
     }
 
-    /* Piliers grid */
-    .piliers {
+    /* Piliers */
+    .piliers-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
+      margin-bottom: 10px;
     }
-    @media (max-width: 500px) { .piliers { grid-template-columns: 1fr; } }
+    @media (max-width: 480px) { .piliers-grid { grid-template-columns: 1fr; } }
 
-    .pilier-card {
+    .pilier {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -168,170 +254,259 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
     }
-    .pilier-name { font-size: 0.875rem; color: #ccc; }
-    .pilier-score { font-size: 1rem; font-weight: 700; }
-    .pilier-max { font-size: 0.75rem; font-weight: 400; color: var(--muted); }
+    .pilier-name {
+      font-size: 0.825rem;
+      color: var(--text2);
+    }
+    .pilier-val {
+      font-size: 0.9rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .pilier-max { font-weight: 400; color: var(--text3); font-size: 0.75rem; }
 
-    /* Problèmes */
-    .problem {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--red);
-      border-radius: 10px;
-      padding: 18px 20px;
-      margin-bottom: 10px;
-    }
-    .problem-num {
+    /* Section header */
+    .section-head {
       font-size: 0.7rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--red);
-      margin-bottom: 6px;
-    }
-    .problem-title { font-size: 1rem; font-weight: 700; margin-bottom: 10px; }
-    .problem-body { font-size: 0.875rem; color: #bbb; line-height: 1.65; margin-bottom: 10px; }
-    .problem-action {
-      font-size: 0.875rem;
-      color: var(--accent);
-      line-height: 1.65;
-      padding-left: 12px;
-      border-left: 2px solid var(--accent);
+      letter-spacing: 0.1em;
+      color: var(--text3);
+      margin: 36px 0 12px;
     }
 
-    /* Reformulation */
-    .reform {
+    /* Problems */
+    .problem-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .problem-header {
+      padding: 16px 20px 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .problem-index {
+      width: 22px; height: 22px;
+      background: rgba(248,113,113,.12);
+      color: var(--red);
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .problem-title {
+      font-size: 0.925rem;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .problem-body {
+      padding: 0 20px 14px 56px;
+      font-size: 0.85rem;
+      color: var(--text2);
+      line-height: 1.7;
+    }
+    .problem-action-wrap {
+      border-top: 1px solid var(--border);
+      padding: 12px 20px 14px 56px;
+      background: var(--surface2);
+    }
+    .problem-action-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .problem-action-text {
+      font-size: 0.85rem;
+      color: var(--text2);
+      line-height: 1.65;
+    }
+
+    /* Reform */
+    .reform-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       overflow: hidden;
     }
     .reform-row {
       padding: 16px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
     }
-    .reform-row + .reform-row { border-top: 1px solid var(--border); }
+    .reform-row + .reform-row {
+      border-top: 1px solid var(--border);
+    }
     .reform-tag {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: var(--muted);
+      color: var(--text3);
+      margin-bottom: 6px;
     }
-    .reform-before { font-size: 0.9rem; color: #666; text-decoration: line-through; }
-    .reform-after { font-size: 0.95rem; font-weight: 600; color: var(--green); }
-    .reform-why { font-size: 0.875rem; color: #bbb; line-height: 1.65; }
+    .reform-old {
+      font-size: 0.875rem;
+      color: var(--text3);
+      text-decoration: line-through;
+      line-height: 1.5;
+    }
+    .reform-new {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--green);
+      line-height: 1.55;
+    }
+    .reform-why {
+      font-size: 0.85rem;
+      color: var(--text2);
+      line-height: 1.7;
+    }
 
-    /* Version améliorée */
-    .improved-section {
+    /* Improved */
+    .improved-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius);
       overflow: hidden;
     }
     .improved-block {
       padding: 18px 20px;
     }
-    .improved-block + .improved-block { border-top: 1px solid var(--border); }
-    .improved-block-title {
-      font-size: 0.75rem;
+    .improved-block + .improved-block {
+      border-top: 1px solid var(--border);
+    }
+    .improved-label {
+      font-size: 0.68rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: var(--muted);
+      color: var(--text3);
       margin-bottom: 10px;
     }
-    .diff-row { margin-bottom: 8px; }
-    .diff-label { font-size: 0.7rem; color: var(--muted); margin-bottom: 2px; }
-    .diff-old { font-size: 0.875rem; color: #666; text-decoration: line-through; line-height: 1.55; }
-    .diff-new { font-size: 0.875rem; color: var(--green); line-height: 1.55; margin-top: 6px; }
+    .diff-old {
+      font-size: 0.85rem;
+      color: var(--text3);
+      text-decoration: line-through;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    .diff-new {
+      font-size: 0.9rem;
+      color: var(--green);
+      font-weight: 500;
+      line-height: 1.65;
+    }
+    .diff-note {
+      font-size: 0.78rem;
+      color: var(--text3);
+      margin-top: 8px;
+      line-height: 1.55;
+    }
 
-    .loader-improved {
+    .loader-inline {
       padding: 24px 20px;
       display: flex;
       align-items: center;
       gap: 12px;
-      color: var(--muted);
-      font-size: 0.875rem;
+      color: var(--text2);
+      font-size: 0.85rem;
     }
-    .spinner-sm {
-      width: 18px; height: 18px;
+    .ring-sm {
+      width: 16px; height: 16px;
       border: 2px solid var(--border);
       border-top-color: var(--accent);
       border-radius: 50%;
-      animation: spin 0.7s linear infinite;
+      animation: spin .7s linear infinite;
       flex-shrink: 0;
     }
 
-    @media (max-width: 500px) {
-      .score-hero { flex-direction: column; gap: 16px; }
-      .search-box { flex-direction: column; }
+    /* Fade in */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp .35s ease forwards; }
+
+    @media (max-width: 520px) {
+      .hero { padding: 40px 20px 32px; }
+      .score-card { grid-template-columns: 1fr; gap: 16px; }
+      .score-gauge { flex-direction: row; align-items: baseline; gap: 8px; }
+      .score-num { font-size: 3rem; }
+      .report-inner { padding: 0 16px; }
     }
   </style>
 </head>
 <body>
-<div class="container">
 
-  <div class="header">
-    <h1>🔍 Landing Analyzer</h1>
-    <p>Audit CRO de ta landing page — score, problèmes et version améliorée.</p>
-  </div>
+<div class="hero">
+  <div class="logo"><div class="logo-dot"></div> Landing Analyzer</div>
+  <h1>Sais-tu vraiment pourquoi ta page ne convertit pas ?</h1>
+  <p>Colle une URL et reçois un audit CRO complet — score, problèmes critiques et copy amélioré.</p>
 
-  <div class="search-box">
+  <div class="search">
     <input type="url" id="urlInput" placeholder="https://exemple.com" autocomplete="off"/>
-    <button class="btn" id="analyzeBtn" onclick="analyze()">Analyser</button>
+    <button id="analyzeBtn" onclick="analyze()">Analyser →</button>
   </div>
+  <div class="error-box" id="errorBox"></div>
+</div>
 
-  <div class="error" id="errorBox"></div>
-  <div class="loader" id="loader">
-    <div class="spinner"></div>
-    <div class="loader-step" id="loaderStep">Chargement de la page...</div>
-  </div>
+<div class="loader" id="loader">
+  <div class="loader-ring"></div>
+  <div class="loader-text" id="loaderText">Chargement de la page...</div>
+</div>
 
-  <div class="report" id="report">
+<div class="report" id="report">
+  <div class="report-inner">
 
-    <div class="url-badge">🌐 <span id="reportUrl"></span></div>
-
-    <!-- Score global -->
-    <div class="score-hero">
-      <div>
-        <div class="score-big" id="scoreNum">—<span>/100</span></div>
+    <div class="source-bar">
+      <div class="source-url">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <a id="reportUrl" href="#" target="_blank"></a>
       </div>
-      <div class="score-hero-right">
-        <div class="score-label">Verdict</div>
-        <div class="verdict-text" id="verdictText"></div>
+      <button class="btn-reanalyze" onclick="analyze()">↺ Relancer</button>
+    </div>
+
+    <!-- Score -->
+    <div class="score-card fade-up">
+      <div class="score-gauge">
+        <div class="score-num" id="scoreNum">—</div>
+        <div class="score-denom">sur 100</div>
+      </div>
+      <div class="score-meta">
+        <div class="score-grade" id="scoreGrade"></div>
+        <div class="verdict" id="verdictText"></div>
       </div>
     </div>
 
     <!-- Piliers -->
-    <div class="section">
-      <div class="section-title">Scores par pilier</div>
-      <div class="piliers" id="piliersGrid"></div>
-    </div>
+    <div class="section-head">Scores par pilier</div>
+    <div class="piliers-grid" id="piliersGrid"></div>
 
     <!-- Problèmes -->
-    <div class="section">
-      <div class="section-title">Top 3 problèmes critiques</div>
-      <div id="problemsList"></div>
-    </div>
+    <div class="section-head">Problèmes critiques</div>
+    <div id="problemsList"></div>
 
     <!-- Reformulation -->
-    <div class="section">
-      <div class="section-title">Reformulation du titre</div>
-      <div class="reform" id="reformCard"></div>
-    </div>
+    <div class="section-head">Reformulation du titre</div>
+    <div class="reform-card" id="reformCard"></div>
 
     <!-- Version améliorée -->
-    <div class="section">
-      <div class="section-title">Version améliorée ✨</div>
-      <div class="improved-section" id="improvedSection">
-        <div class="loader-improved" id="loaderImproved">
-          <div class="spinner-sm"></div>
-          <span>Claude rédige les sections améliorées...</span>
-        </div>
+    <div class="section-head">Version améliorée ✦</div>
+    <div class="improved-card" id="improvedCard">
+      <div class="loader-inline">
+        <div class="ring-sm"></div>
+        Claude rédige les suggestions...
       </div>
     </div>
 
@@ -346,162 +521,129 @@ const PILIERS = [
   { key: 'structure_flow',     label: 'Structure & flow',      max: 15 },
   { key: 'call_to_action',     label: 'Call to Action',        max: 15 },
   { key: 'confiance_preuve',   label: 'Confiance & preuves',   max: 10 },
-  { key: 'mobile_performance', label: 'Mobile & performance',  max: 5  },
+  { key: 'mobile_performance', label: 'Mobile & perf.',        max: 5  },
+];
+
+const STEPS = [
+  'Chargement de la page...', 'Extraction du contenu...',
+  'Analyse CRO en cours...', 'Calcul des scores...'
 ];
 
 function scoreColor(val, max) {
-  const pct = val / max;
-  if (pct >= 0.75) return 'var(--green)';
-  if (pct >= 0.50) return 'var(--yellow)';
-  return 'var(--red)';
+  const p = val / max;
+  return p >= .75 ? 'var(--green)' : p >= .5 ? 'var(--yellow)' : 'var(--red)';
+}
+function gradeInfo(score) {
+  if (score >= 75) return { label: 'Bonne page', cls: 'grade-good' };
+  if (score >= 50) return { label: 'Perfectible', cls: 'grade-ok' };
+  return { label: 'Problèmes majeurs', cls: 'grade-bad' };
 }
 
-const steps = [
-  'Chargement de la page...',
-  'Extraction du contenu...',
-  'Analyse CRO en cours...',
-  'Calcul des scores...'
-];
-
 async function analyze() {
-  const rawUrl = document.getElementById('urlInput').value.trim();
-  if (!rawUrl) return;
+  let url = document.getElementById('urlInput').value.trim();
+  if (!url) return;
+  if (!url.startsWith('http')) { url = 'https://' + url; document.getElementById('urlInput').value = url; }
 
-  let url = rawUrl;
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = 'https://' + url;
-    document.getElementById('urlInput').value = url;
-  }
-
-  const btn = document.getElementById('analyzeBtn');
+  const btn   = document.getElementById('analyzeBtn');
   const loader = document.getElementById('loader');
   const report = document.getElementById('report');
-  const errorBox = document.getElementById('errorBox');
+  const errBox = document.getElementById('errorBox');
 
   btn.disabled = true;
-  loader.classList.add('active');
-  report.classList.remove('active');
-  errorBox.classList.remove('active');
+  errBox.classList.remove('show');
+  report.classList.remove('show');
+  loader.classList.add('show');
 
-  let stepIdx = 0;
-  const stepEl = document.getElementById('loaderStep');
-  const interval = setInterval(() => {
-    stepIdx = (stepIdx + 1) % steps.length;
-    stepEl.textContent = steps[stepIdx];
-  }, 2500);
+  let si = 0;
+  const iv = setInterval(() => {
+    document.getElementById('loaderText').textContent = STEPS[si = (si+1) % STEPS.length];
+  }, 2200);
 
   try {
-    const res = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
-    });
+    const res  = await fetch('/api/analyze', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url}) });
     const data = await res.json();
-    clearInterval(interval);
-
+    clearInterval(iv);
     if (!data.success) throw new Error(data.error);
 
-    loader.classList.remove('active');
-    renderReport(url, data.analysis);
-    report.classList.add('active');
+    loader.classList.remove('show');
+    render(url, data.analysis);
+    report.classList.add('show');
+    window.scrollTo({ top: document.getElementById('report').offsetTop - 20, behavior: 'smooth' });
 
-    // Lancer la version améliorée en async
     loadImproved(url, data.analysis);
 
   } catch (err) {
-    clearInterval(interval);
-    loader.classList.remove('active');
-    errorBox.textContent = '❌ ' + (err.message || 'Erreur inattendue.');
-    errorBox.classList.add('active');
+    clearInterval(iv);
+    loader.classList.remove('show');
+    errBox.textContent = '❌ ' + (err.message || 'Erreur inattendue.');
+    errBox.classList.add('show');
   } finally {
     btn.disabled = false;
   }
 }
 
-function renderReport(url, a) {
-  document.getElementById('reportUrl').textContent = url;
+function render(url, a) {
+  const urlEl = document.getElementById('reportUrl');
+  urlEl.textContent = url.replace(/^https?:\/\//, '');
+  urlEl.href = url;
 
-  // Score global
   const color = scoreColor(a.score_global, 100);
-  const scoreEl = document.getElementById('scoreNum');
-  scoreEl.innerHTML = `<span style="color:${color}">${a.score_global}</span><span style="font-size:1.2rem;font-weight:400;color:var(--muted)">/100</span>`;
+  document.getElementById('scoreNum').innerHTML = `<span style="color:${color}">${a.score_global}</span>`;
+
+  const g = gradeInfo(a.score_global);
+  const gradeEl = document.getElementById('scoreGrade');
+  gradeEl.textContent = g.label;
+  gradeEl.className = 'score-grade ' + g.cls;
+
   document.getElementById('verdictText').textContent = a.verdict_global;
 
-  // Piliers
   document.getElementById('piliersGrid').innerHTML = PILIERS.map(p => {
-    const val = a.scores[p.key] || 0;
-    const c = scoreColor(val, p.max);
-    return `
-      <div class="pilier-card">
-        <span class="pilier-name">${p.label}</span>
-        <span class="pilier-score" style="color:${c}">${val}<span class="pilier-max">/${p.max}</span></span>
-      </div>`;
+    const v = a.scores[p.key] || 0;
+    return `<div class="pilier fade-up">
+      <span class="pilier-name">${p.label}</span>
+      <span class="pilier-val" style="color:${scoreColor(v, p.max)}">${v}<span class="pilier-max">/${p.max}</span></span>
+    </div>`;
   }).join('');
 
-  // Problèmes
   document.getElementById('problemsList').innerHTML = a.top3_problemes.map((p, i) => `
-    <div class="problem">
-      <div class="problem-num">Problème ${i + 1}</div>
-      <div class="problem-title">${p.titre}</div>
+    <div class="problem-card fade-up">
+      <div class="problem-header">
+        <div class="problem-index">${i+1}</div>
+        <div class="problem-title">${p.titre}</div>
+      </div>
       <div class="problem-body">${p.constat}</div>
-      <div class="problem-action">${p.action}</div>
+      <div class="problem-action-wrap">
+        <div class="problem-action-label">Action recommandée</div>
+        <div class="problem-action-text">${p.action}</div>
+      </div>
     </div>`).join('');
 
-  // Reformulation
   const r = a.reformulation;
   document.getElementById('reformCard').innerHTML = `
-    <div class="reform-row">
-      <div class="reform-tag">Titre actuel</div>
-      <div class="reform-before">${r.titre_actuel}</div>
-    </div>
-    <div class="reform-row">
-      <div class="reform-tag">Titre suggéré</div>
-      <div class="reform-after">${r.titre_suggere}</div>
-    </div>
-    <div class="reform-row">
-      <div class="reform-tag">Pourquoi</div>
-      <div class="reform-why">${r.pourquoi}</div>
-    </div>`;
+    <div class="reform-row"><div class="reform-tag">Titre actuel</div><div class="reform-old">${r.titre_actuel}</div></div>
+    <div class="reform-row"><div class="reform-tag">Suggestion</div><div class="reform-new">${r.titre_suggere}</div></div>
+    <div class="reform-row"><div class="reform-tag">Pourquoi</div><div class="reform-why">${r.pourquoi}</div></div>`;
 }
 
 async function loadImproved(url, analysis) {
+  const card = document.getElementById('improvedCard');
   try {
-    const res = await fetch('/api/improve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url, analysis })
-    });
+    const res  = await fetch('/api/improve', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url, analysis}) });
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
-    renderImproved(data.improved);
-  } catch (err) {
-    document.getElementById('improvedSection').innerHTML = `
-      <div style="padding:20px;color:var(--muted);font-size:0.875rem;">
-        Impossible de générer la version améliorée : ${err.message}
-      </div>`;
+    card.innerHTML = data.improved.sections.map(s => `
+      <div class="improved-block fade-up">
+        <div class="improved-label">${s.section}</div>
+        <div class="diff-old">${s.original}</div>
+        <div class="diff-new">${s.improved}</div>
+        ${s.note ? `<div class="diff-note">${s.note}</div>` : ''}
+      </div>`).join('');
+  } catch(e) {
+    card.innerHTML = `<div style="padding:20px;color:var(--text3);font-size:.85rem">Erreur : ${e.message}</div>`;
   }
 }
 
-function renderImproved(improved) {
-  const container = document.getElementById('improvedSection');
-  container.innerHTML = improved.sections.map(s => `
-    <div class="improved-block">
-      <div class="improved-block-title">${s.section}</div>
-      <div class="diff-row">
-        <div class="diff-label">Actuel</div>
-        <div class="diff-old">${s.original}</div>
-      </div>
-      <div class="diff-row">
-        <div class="diff-label">Suggestion</div>
-        <div class="diff-new">${s.improved}</div>
-      </div>
-      ${s.note ? `<div style="font-size:0.8rem;color:var(--muted);margin-top:8px">${s.note}</div>` : ''}
-    </div>`).join('');
-}
-
-document.getElementById('urlInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') analyze();
-});
+document.getElementById('urlInput').addEventListener('keydown', e => { if (e.key==='Enter') analyze(); });
 </script>
 </body>
 </html>
