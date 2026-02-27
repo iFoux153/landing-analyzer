@@ -250,41 +250,36 @@ async function generateHTML(content, analysis, improved) {
   const improvements = sections.map(s => `• ${s.section} : ${s.improved}`).join('\n');
   const problems = analysis.top3_problemes.map(p => `• ${p.titre} → ${p.action}`).join('\n');
 
-  const prompt = `Tu es un expert CRO et développeur frontend. Génère une landing page HTML complète et autonome basée sur les informations suivantes.
+  const prompt = `Tu es un expert CRO et développeur frontend. Génère une landing page HTML autonome et concise.
 
-CONTENU ORIGINAL :
-- Nom/Titre du produit : ${content.title}
-- Description : ${content.metaDesc}
-- Proposition de valeur : ${content.paragraphs.slice(0, 3).join(' | ')}
-- Features clés : ${content.paragraphs.slice(3, 8).join(' | ')}
-- CTAs : ${[...new Set(content.buttons)].slice(0, 6).join(' | ')}
-- Témoignages/preuves : ${content.paragraphs.filter(p => p.length > 40 && p.length < 200).slice(0, 3).join(' | ')}
+PRODUIT : ${content.title}
+VALEUR : ${content.metaDesc}
+COPY : ${content.paragraphs.slice(0, 5).join(' | ')}
+CTA : ${[...new Set(content.buttons)].slice(0, 4).join(' | ')}
 
-AMÉLIORATIONS À INTÉGRER :
+AMÉLIORATIONS :
 ${improvements}
 
-PROBLÈMES À CORRIGER :
+CORRECTIONS :
 ${problems}
 
-CONTRAINTES :
-- HTML complet autonome (tout inline — CSS dans <style>, pas de dépendances externes sauf Google Fonts)
-- Mobile-first, responsive
-- Design dark moderne et professionnel (pas de couleurs criardes)
-- Structure : Hero → Problème → Solution → Features → Preuves sociales → Prix (si dispo) → FAQ → CTA final
-- H1 présent et optimisé
-- CTA above the fold obligatoire
-- Pas de Lorem ipsum — utilise le vrai contenu amélioré
-- Code propre et commenté par section
+RÈGLES STRICTES :
+- HTML complet en une seule page (CSS inline dans <style>)
+- Sections : Hero (H1 + sous-titre + CTA) → Bénéfices (3 points) → Preuve sociale → CTA final
+- Mobile-first, dark theme sobre (#0f0f0f fond, #7c6cfc accent)
+- Google Fonts Inter autorisé uniquement
+- AUCUN Lorem ipsum — vrai contenu uniquement
+- Code court et lisible — vise 150-200 lignes max
 
-Retourne UNIQUEMENT le code HTML complet, sans explication, sans markdown, sans backticks.`;
+Retourne UNIQUEMENT le code HTML, sans markdown, sans backticks, sans explication.`;
 
   const res = await fetch(GATEWAY_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GATEWAY_TOKEN}` },
     body: JSON.stringify({
       model: GATEWAY_MODEL,
-      max_tokens: 8000,
-      temperature: 0.3,
+      max_tokens: 4000,
+      temperature: 0.2,
       messages: [{ role: 'user', content: prompt }]
     })
   });

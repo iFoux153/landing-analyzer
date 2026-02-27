@@ -798,7 +798,9 @@ async function generateHTML() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: lastUrl, analysis: lastAnalysis, improved: lastImproved })
     });
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { throw new Error('Réponse invalide du serveur. Réessaie.'); }
     if (!data.success) throw new Error(data.error);
 
     generatedHTML = data.html;
