@@ -244,6 +244,78 @@ app.post('/api/improve', async (req, res) => {
   }
 });
 
+// --- Générer le HTML amélioré ---
+async function generateHTML(content, analysis, improved) {
+  const sections = improved?.sections || [];
+  const improvements = sections.map(s => `• ${s.section} : ${s.improved}`).join('\n');
+  const problems = analysis.top3_problemes.map(p => `• ${p.titre} → ${p.action}`).join('\n');
+
+  const prompt = `Tu es un expert CRO et développeur frontend. Génère une landing page HTML complète et autonome basée sur les informations suivantes.
+
+CONTENU ORIGINAL :
+- Nom/Titre du produit : ${content.title}
+- Description : ${content.metaDesc}
+- Proposition de valeur : ${content.paragraphs.slice(0, 3).join(' | ')}
+- Features clés : ${content.paragraphs.slice(3, 8).join(' | ')}
+- CTAs : ${[...new Set(content.buttons)].slice(0, 6).join(' | ')}
+- Témoignages/preuves : ${content.paragraphs.filter(p => p.length > 40 && p.length < 200).slice(0, 3).join(' | ')}
+
+AMÉLIORATIONS À INTÉGRER :
+${improvements}
+
+PROBLÈMES À CORRIGER :
+${problems}
+
+CONTRAINTES :
+- HTML complet autonome (tout inline — CSS dans <style>, pas de dépendances externes sauf Google Fonts)
+- Mobile-first, responsive
+- Design dark moderne et professionnel (pas de couleurs criardes)
+- Structure : Hero → Problème → Solution → Features → Preuves sociales → Prix (si dispo) → FAQ → CTA final
+- H1 présent et optimisé
+- CTA above the fold obligatoire
+- Pas de Lorem ipsum — utilise le vrai contenu amélioré
+- Code propre et commenté par section
+
+Retourne UNIQUEMENT le code HTML complet, sans explication, sans markdown, sans backticks.`;
+
+  const res = await fetch(GATEWAY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GATEWAY_TOKEN}` },
+    body: JSON.stringify({
+      model: GATEWAY_MODEL,
+      max_tokens: 8000,
+      temperature: 0.3,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  const data = await res.json();
+  let html = data.choices[0].message.content.trim();
+  // Nettoyer si Claude wrap dans des backticks
+  html = html.replace(/^```html?\n?/, '').replace(/\n?```$/, '').trim();
+  return html;
+}
+
+// --- API route : generate ---
+app.post('/api/generate', async (req, res) => {
+  const { url, analysis, improved } = req.body;
+  if (!url || !analysis) return res.status(400).json({ error: 'Données manquantes' });
+
+  try {
+    let content = pageCache.get(url);
+    if (!content) {
+      console.log(`🔍 Re-scraping for generate: ${url}`);
+      content = await scrapePage(url);
+    }
+    console.log(`🏗️ Generating HTML...`);
+    const html = await generateHTML(content, analysis, improved);
+    res.json({ success: true, html });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Landing Analyzer running on http://localhost:${PORT}`);
 });

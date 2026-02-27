@@ -431,6 +431,115 @@
       flex-shrink: 0;
     }
 
+    /* Generate card */
+    .generate-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .generate-prompt {
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .generate-prompt p {
+      font-size: 0.875rem;
+      color: var(--text2);
+      line-height: 1.6;
+      flex: 1;
+    }
+    .btn-generate {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-generate:hover { opacity: 0.85; }
+    .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .code-block {
+      border-top: 1px solid var(--border);
+    }
+    .code-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    .code-toolbar-label {
+      font-size: 0.75rem;
+      color: var(--text3);
+      font-family: monospace;
+    }
+    .code-actions { display: flex; gap: 8px; }
+    .btn-code-action {
+      font-size: 0.75rem;
+      color: var(--text2);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-code-action:hover { border-color: var(--border2); color: var(--text); }
+    .btn-code-action.copied { color: var(--green); border-color: var(--green); }
+
+    pre.html-output {
+      padding: 20px;
+      overflow-x: auto;
+      font-size: 0.78rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      color: #a5b4fc;
+      line-height: 1.65;
+      max-height: 400px;
+      overflow-y: auto;
+      background: var(--bg);
+    }
+
+    .preview-frame {
+      width: 100%;
+      height: 500px;
+      border: none;
+      border-top: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+    }
+    .tab {
+      font-size: 0.8rem;
+      color: var(--text3);
+      padding: 10px 14px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s;
+    }
+    .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+    .tab:hover:not(.active) { color: var(--text2); }
+
     /* Fade in */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(10px); }
@@ -510,6 +619,18 @@
       </div>
     </div>
 
+    <!-- Générer le HTML -->
+    <div class="section-head">Landing page générée ✦</div>
+    <div class="generate-card" id="generateCard">
+      <div class="generate-prompt">
+        <p>Génère une landing page HTML complète avec toutes les améliorations appliquées — prête à héberger ou coller dans Framer.</p>
+        <button class="btn-generate" id="generateBtn" onclick="generateHTML()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          Générer le code HTML
+        </button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -566,6 +687,7 @@ async function analyze() {
     if (!data.success) throw new Error(data.error);
 
     loader.classList.remove('show');
+    lastUrl = url; lastAnalysis = data.analysis; lastImproved = null; generatedHTML = null;
     render(url, data.analysis);
     report.classList.add('show');
     window.scrollTo({ top: document.getElementById('report').offsetTop - 20, behavior: 'smooth' });
@@ -631,6 +753,7 @@ async function loadImproved(url, analysis) {
     const res  = await fetch('/api/improve', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url, analysis}) });
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
+    lastImproved = data.improved;
     card.innerHTML = data.improved.sections.map(s => `
       <div class="improved-block fade-up">
         <div class="improved-label">${s.section}</div>
@@ -644,6 +767,124 @@ async function loadImproved(url, analysis) {
 }
 
 document.getElementById('urlInput').addEventListener('keydown', e => { if (e.key==='Enter') analyze(); });
+
+// State global pour le generate
+let lastUrl = null;
+let lastAnalysis = null;
+let lastImproved = null;
+let generatedHTML = null;
+
+async function generateHTML() {
+  if (!lastUrl || !lastAnalysis) return;
+
+  const btn  = document.getElementById('generateBtn');
+  const card = document.getElementById('generateCard');
+
+  btn.disabled = true;
+  btn.textContent = 'Génération en cours...';
+
+  // Afficher loader dans la card
+  card.innerHTML = `
+    <div class="generate-prompt">
+      <div class="loader-inline" style="width:100%">
+        <div class="ring-sm"></div>
+        Claude génère le code HTML complet...
+      </div>
+    </div>`;
+
+  try {
+    const res  = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: lastUrl, analysis: lastAnalysis, improved: lastImproved })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    generatedHTML = data.html;
+    renderGeneratedHTML(data.html);
+
+  } catch (err) {
+    card.innerHTML = `
+      <div style="padding:20px;color:var(--red);font-size:.85rem">
+        ❌ Erreur : ${err.message}
+        <button class="btn-generate" style="margin-top:12px" onclick="generateHTML()">Réessayer</button>
+      </div>`;
+  }
+}
+
+function renderGeneratedHTML(html) {
+  const card = document.getElementById('generateCard');
+  const escaped = html.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  card.innerHTML = `
+    <div class="generate-prompt" style="padding:16px 20px">
+      <p style="margin:0">Landing page générée avec toutes les améliorations appliquées.</p>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button class="btn-code-action" onclick="downloadHTML()">⬇ Télécharger</button>
+        <button class="btn-code-action" onclick="openPreview()">👁 Prévisualiser</button>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="tab-bar">
+        <div class="tab active" onclick="showTab('code', this)">Code</div>
+        <div class="tab" onclick="showTab('preview', this)">Preview</div>
+      </div>
+      <div id="tabCode">
+        <div class="code-toolbar">
+          <span class="code-toolbar-label">index.html</span>
+          <div class="code-actions">
+            <button class="btn-code-action" id="copyBtn" onclick="copyHTML()">Copier</button>
+          </div>
+        </div>
+        <pre class="html-output">${escaped}</pre>
+      </div>
+      <div id="tabPreview" style="display:none">
+        <iframe class="preview-frame" id="previewFrame"></iframe>
+      </div>
+    </div>`;
+
+  // Charger la preview
+  setTimeout(() => {
+    const frame = document.getElementById('previewFrame');
+    if (frame) {
+      frame.srcdoc = html;
+    }
+  }, 100);
+}
+
+function showTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tabCode').style.display    = tab === 'code'    ? 'block' : 'none';
+  document.getElementById('tabPreview').style.display = tab === 'preview' ? 'block' : 'none';
+}
+
+function copyHTML() {
+  if (!generatedHTML) return;
+  navigator.clipboard.writeText(generatedHTML).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ Copié';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copier'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function downloadHTML() {
+  if (!generatedHTML) return;
+  const blob = new Blob([generatedHTML], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'landing-page-improved.html';
+  a.click();
+}
+
+function openPreview() {
+  if (!generatedHTML) return;
+  const win = window.open('', '_blank');
+  win.document.write(generatedHTML);
+  win.document.close();
+}
 </script>
 </body>
 </html>
